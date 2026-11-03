@@ -31,7 +31,7 @@
     ':host{all:initial;display:block;font-family:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;color:#14213D;}',
     '*{box-sizing:border-box;}',
     '.wrap{max-width:1200px;margin:24px auto 40px;padding:0 24px;}',
-    '.ads{background:transparent;border-top:3px solid #1F4FBF;border-bottom:3px solid #FFC93C;padding:28px 0 36px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;}',
+    '.ads{background:transparent;border:none;padding:28px 0 36px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;}',
     '.carousel{width:100%;max-width:900px;padding:0 16px;}',
     '.viewport{width:100%;overflow:hidden;border-radius:16px;border:2px solid #14213D;background:#F1F3F8;}',
     '.track{display:flex;transition:transform .6s ease;}',
