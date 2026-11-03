@@ -31,8 +31,7 @@
     ':host{all:initial;display:block;font-family:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;color:#14213D;}',
     '*{box-sizing:border-box;}',
     '.wrap{max-width:1200px;margin:24px auto 40px;padding:0 24px;}',
-    '.ads{background:#fff;border-top:3px solid #1F4FBF;border-bottom:3px solid #FFC93C;padding:28px 0 36px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;}',
-    'h2{margin:0;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#5A6275;}',
+    '.ads{background:transparent;border-top:3px solid #1F4FBF;border-bottom:3px solid #FFC93C;padding:28px 0 36px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;}',
     '.carousel{width:100%;max-width:900px;padding:0 16px;}',
     '.viewport{width:100%;overflow:hidden;border-radius:16px;border:2px solid #14213D;background:#F1F3F8;}',
     '.track{display:flex;transition:transform .6s ease;}',
@@ -113,7 +112,6 @@
     var wrap = el('div', 'wrap');
     var section = el('section', 'ads');
     section.setAttribute('aria-label', 'Advertisers');
-    section.appendChild(el('h2', null, host.getAttribute('data-heading') || 'Advertisers'));
     var carousel = el('div', 'carousel');
     var viewport = el('div', 'viewport');
     var track = el('div', 'track');

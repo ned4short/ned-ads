@@ -13,7 +13,7 @@ Paste this where the slideshow should appear (usually right after the footer):
 <script async src="https://ads.nedwebservices.com/widget.js"></script>
 ```
 
-It carries its own styling, so it looks the same on every site and can't clash with the site's own design. It includes the "Advertisers" heading, the slideshow (5 seconds per ad, arrows, Pause/Play, swipe on phones), and the "Advertise with us" button.
+It carries its own styling, so it can't clash with the site's own design. Its background is transparent, so it sits on whatever background the site has. It includes the slideshow (5 seconds per ad, arrows, Pause/Play, swipe on phones), and the "Advertise with us" button.
 
 ## Manage the ads
 
