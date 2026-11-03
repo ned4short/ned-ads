@@ -1,0 +1,35 @@
+# Ned Ads
+
+One advertiser slideshow shared by every Ned website. Change the ads here once and every site updates.
+
+Live: https://ads.nedwebservices.com
+
+## Add the slideshow to a website
+
+Paste this where the slideshow should appear (usually right after the footer):
+
+```html
+<div data-ned-ads></div>
+<script async src="https://ads.nedwebservices.com/widget.js"></script>
+```
+
+It carries its own styling, so it looks the same on every site and can't clash with the site's own design. It includes the "Advertisers" heading, the slideshow (5 seconds per ad, arrows, Pause/Play, swipe on phones), and the "Advertise with us" button.
+
+## Manage the ads
+
+- `ads.json` – the list of ads, in slideshow order. Each entry has a `name`, an `image` (file in `ads/`) and a `link` (opens in a new tab).
+- Banner-shaped images (about 3 times wider than tall, e.g. 1200 × 400) are shown as-is.
+- Any other shape is shown whole beside a red, blue or yellow panel with the name and a "Visit …" link. `"color": "red" | "blue" | "yellow"` picks the panel color.
+- Optional: `"sites": ["eventcrawler.nedwebservices.com"]` shows an ad only on those sites; `"hideOn": [...]` hides it on those sites.
+
+## Click tracking
+
+Every ad click is recorded in Ned Traffic under the "Ned Ads" site as a visit to `/click/<ad-name>?from=<site>`. The page that was clicked from is the referrer. Set the site ID in `TRACK_SITE` at the top of `widget.js`.
+
+## Advertiser requests
+
+`advertise.html` is the shared "Advertise with us" form. Requests are emailed through FormSubmit with the subject "Event Crawler Advertiser Request" and the uploaded image attached.
+
+## Hosting
+
+GitHub Pages from `main` of `ned4short/ned-ads`, custom domain `ads.nedwebservices.com` (`CNAME`). DNS: a CNAME record `ads` → `ned4short.github.io`.
