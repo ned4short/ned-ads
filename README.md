@@ -28,7 +28,7 @@ Every ad click is recorded in Ned Traffic under the "Ned Ads" site as a visit to
 
 ## Advertiser requests
 
-`advertise.html` is the shared "Advertise with us" form. Requests are emailed through FormSubmit with the subject "Event Crawler Advertiser Request" and the uploaded image attached.
+`advertise.html` is the shared "Advertise with us" form. Requests are emailed through FormSubmit with the subject "Ned Ads Advertiser Request" and the uploaded image attached.
 
 ## Hosting
 
