@@ -1,10 +1,10 @@
 [
+  {"name": "Upstage Comedy Lounge", "image": "ads/upstage-comedy-club.jpg", "link": "https://upstagecomedy.com"},
   {"name": "A Tea Party in a Box", "image": "ads/a-tea-party-in-a-box-banner.jpg", "link": "https://ateapartyinabox.com"},
   {"name": "Filtered Thoughts", "image": "ads/filtered-thoughts-banner.jpg", "link": "https://blog.nedworldwide.com/"},
   {"name": "The Tea Blossom", "image": "ads/the-tea-blossom.jpg", "link": "https://ateapartyinabox.com/pages/the-tea-blossom"},
   {"name": "Ned Web Services", "image": "ads/ned-web-services.jpg", "link": "https://nedwebservices.com/"},
   {"name": "Ned Air Filters", "image": "ads/ned-air-filters-banner.jpg", "link": "https://www.nedairfilters.com"},
   {"name": "Ned Games", "image": "ads/ned-games-banner.jpg", "link": "https://games.nedwebservices.com/"},
-  {"name": "Upstage Comedy Club", "image": "ads/upstage-comedy-club.jpg", "link": "https://upstagecomedy.com"},
   {"name": "Your Ad Here", "image": "ads/your-ad-here.jpg", "link": "https://ads.nedwebservices.com/advertise.html"}
 ]
