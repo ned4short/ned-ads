@@ -44,18 +44,21 @@
     '.panel{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;padding:0 clamp(12px,4vw,40px);text-align:left;}',
     '.panel .name{font-size:clamp(16px,4vw,40px);font-weight:800;line-height:1.05;letter-spacing:-.02em;}',
     '.panel .visit{font-size:clamp(11px,1.6vw,17px);font-weight:700;opacity:.92;overflow-wrap:anywhere;}',
-    '.controls{display:flex;justify-content:center;align-items:center;gap:4px;margin-top:8px;flex-wrap:wrap;}',
-    '.dot{width:32px;height:32px;border:none;background:transparent;cursor:pointer;position:relative;padding:0;}',
-    '.dot::after{content:"";position:absolute;inset:11px;border-radius:50%;background:#C9CEDB;}',
+    '.controls{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:6px;margin-top:8px;width:100%;}',
+    '.dots{flex:1 1 0;min-width:0;display:flex;flex-wrap:nowrap;align-items:center;}',
+    '.dots.left{justify-content:flex-end;}',
+    '.dots.right{justify-content:flex-start;}',
+    '.center{flex:0 0 auto;display:flex;align-items:center;gap:6px;}',
+    '.dot{flex:0 1 32px;min-width:10px;height:32px;border:none;background:transparent;cursor:pointer;position:relative;padding:0;}',
+    '.dot::after{content:"";position:absolute;top:50%;left:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#C9CEDB;}',
     '.dot[aria-current="true"]::after{background:#D62839;}',
-    '.arrow{width:32px;height:32px;border-radius:50%;border:1.5px solid #C9CEDB;background:#fff;color:#14213D;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;}',
+    '.arrow{flex:0 0 auto;width:32px;height:32px;border-radius:50%;border:1.5px solid #C9CEDB;background:#fff;color:#14213D;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;}',
     '.arrow:hover{border-color:#1F4FBF;color:#1F4FBF;}',
-    '.arrow.prev{margin-left:8px;}',
-    '.pause{height:32px;padding:0 12px;border:1.5px solid #C9CEDB;border-radius:999px;background:#fff;color:#14213D;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}',
+    '.pause{flex:0 0 auto;height:32px;padding:0 12px;border:1.5px solid #C9CEDB;border-radius:999px;background:#fff;color:#14213D;font:inherit;font-size:13px;font-weight:600;cursor:pointer;}',
     'button:focus-visible,a:focus-visible{outline:3px solid #1F4FBF;outline-offset:2px;}',
     '.cta{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 32px;margin-top:10px;border-radius:12px;background:#D62839;color:#fff;font-size:17px;font-weight:700;text-decoration:none;box-shadow:5px 5px 0 #FFC93C;}',
     '.cta:hover{background:#B81F2F;}',
-    '@media (max-width:520px){.wrap{padding:0 16px;}.carousel{padding:0 12px;}.cta{width:calc(100% - 24px);}}'
+    '@media (max-width:520px){.dot::after{width:8px;height:8px;margin:-4px 0 0 -4px;}.controls,.center{gap:4px;}.wrap{padding:0 16px;}.carousel{padding:0 12px;}.cta{width:calc(100% - 24px);}}'
   ].join('\n');
 
   function slug(s) {
@@ -156,13 +159,18 @@
     });
 
     var current = 0, timer = null, paused = false, hover = false;
+    // One line: half the dots, then ‹ Pause › in the middle, then the other half.
     var controls = el('div', 'controls');
+    var leftDots = el('div', 'dots left');
+    var center = el('div', 'center');
+    var rightDots = el('div', 'dots right');
+    var half = Math.ceil(ads.length / 2);
     var dots = ads.map(function (a, i) {
       var d = el('button', 'dot');
       d.type = 'button';
       d.setAttribute('aria-label', 'Show ad ' + (i + 1) + ': ' + (a.name || 'Advertiser'));
       d.addEventListener('click', function () { go(i); restart(); });
-      controls.appendChild(d);
+      (i < half ? leftDots : rightDots).appendChild(d);
       return d;
     });
     function arrow(dir) {
@@ -177,9 +185,12 @@
     pause.type = 'button';
     pause.addEventListener('click', function () { paused = !paused; update(); restart(); });
     if (ads.length > 1) {
-      controls.appendChild(arrow(-1));
-      controls.appendChild(pause);
-      controls.appendChild(arrow(1));
+      center.appendChild(arrow(-1));
+      center.appendChild(pause);
+      center.appendChild(arrow(1));
+      controls.appendChild(leftDots);
+      controls.appendChild(center);
+      controls.appendChild(rightDots);
       carousel.appendChild(controls);
     }
 
