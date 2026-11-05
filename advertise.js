@@ -17,6 +17,16 @@
     if (field) field.focus();
   }
 
+  var ERRORS = {
+    size: 'That image is too big to send. Please choose one under 8 MB.',
+    image: 'We couldn\'t read that image. Please upload a JPG, PNG, WebP or GIF.',
+    fields: 'Please fill in every field with a valid email and website link.',
+    busy: 'Too many requests from this connection. Please try again in an hour.',
+    send: 'Sorry, your request didn\'t send. Please try again in a few minutes.'
+  };
+  var err = /[?&]error=([a-z]+)/.exec(location.search);
+  if (err) fail(ERRORS[err[1]] || ERRORS.send);
+
   form.addEventListener('submit', function (ev) {
     var site = $('ad-site');
     if (site.value.trim() && !/^https?:\/\//i.test(site.value.trim())) site.value = 'https://' + site.value.trim();

@@ -28,7 +28,7 @@ Every ad click is recorded in Ned Traffic under the "Ned Ads" site as a visit to
 
 ## Advertiser requests
 
-`advertise.html` is the shared "Advertise with us" form. Requests are emailed through FormSubmit with the subject "Ned Ads Advertiser Request" and the uploaded image attached.
+`advertise.html` is the shared "Advertise with us" form. Requests post to `https://www.ned4short.com/forms/advertise.php` (a PHP script on the ned4short.com GoDaddy hosting), which emails nedu@nedairfilters.com with the subject "Ned Ads Advertiser Request", attaches the banner, keeps a copy in `ned4short.com/forms/uploads/`, and returns to `advertise.html?sent=1` (or `?error=…`).
 
 ## Hosting
 

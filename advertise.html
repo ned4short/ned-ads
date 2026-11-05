@@ -38,30 +38,26 @@
       <a href="https://nedwebservices.com/" class="primary cta-btn">Visit Ned Web Services</a>
     </div>
 
-    <form class="submit-form" id="ad-form" action="https://formsubmit.co/ccbf3546334c2a96b18bf5f360c965fb" method="POST" enctype="multipart/form-data">
-      <input type="hidden" name="_subject" value="Ned Ads Advertiser Request">
-      <input type="hidden" name="_template" value="table">
-      <input type="hidden" name="_captcha" value="false">
-      <input type="hidden" name="_next" value="https://ads.nedwebservices.com/advertise.html?sent=1">
+    <form class="submit-form" id="ad-form" action="https://www.ned4short.com/forms/advertise.php" method="POST" enctype="multipart/form-data">
 
       <label class="field">Name
-        <input type="text" name="Name" id="ad-name" autocomplete="name" required maxlength="120">
+        <input type="text" name="name" id="ad-name" autocomplete="name" required maxlength="120">
       </label>
       <label class="field">Email address
         <input type="email" name="email" id="ad-email" autocomplete="email" required maxlength="200">
       </label>
       <label class="field">Business name
-        <input type="text" name="Business name" id="ad-business" autocomplete="organization" required maxlength="160">
+        <input type="text" name="business" id="ad-business" autocomplete="organization" required maxlength="160">
       </label>
       <label class="field">Website link
-        <input type="url" name="Website" id="ad-site" placeholder="https://" required maxlength="500">
+        <input type="url" name="website" id="ad-site" placeholder="https://" required maxlength="500">
       </label>
       <label class="field">Upload image
         <input type="file" name="attachment" id="ad-image" accept="image/png, image/jpeg, image/webp, image/gif" required>
         <span class="hint">JPG, PNG, WebP or GIF, up to 8 MB. Best size: 1200 × 400 pixels or larger, 3 times wider than tall. Your banner is shown as-is, so include your name and website on it.</span>
       </label>
       <label class="field">What do you want to advertise?
-        <textarea name="Description" id="ad-desc" required maxlength="1000" placeholder="A quick description"></textarea>
+        <textarea name="description" id="ad-desc" required maxlength="1000" placeholder="A quick description"></textarea>
       </label>
       <label class="hp" aria-hidden="true">Leave this empty
         <input type="text" name="_honey" tabindex="-1" autocomplete="off">
@@ -79,7 +75,7 @@
 
   <div data-ned-ads></div>
 </div>
-<script src="advertise.js?v=1"></script>
+<script src="advertise.js?v=2"></script>
 <script async src="widget.js"></script>
 </body>
 </html>
