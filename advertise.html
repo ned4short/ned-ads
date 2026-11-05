@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=1">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <div class="page">
@@ -46,15 +46,18 @@
       <label class="field">Email address
         <input type="email" name="email" id="ad-email" autocomplete="email" required maxlength="200">
       </label>
+      <label class="field"><span>Phone number <span class="optional">(optional)</span></span>
+        <input type="tel" name="phone" id="ad-phone" autocomplete="tel" maxlength="40">
+      </label>
       <label class="field">Business name
         <input type="text" name="business" id="ad-business" autocomplete="organization" required maxlength="160">
       </label>
       <label class="field">Website link
         <input type="url" name="website" id="ad-site" placeholder="https://" required maxlength="500">
       </label>
-      <label class="field">Upload image
-        <input type="file" name="attachment" id="ad-image" accept="image/png, image/jpeg, image/webp, image/gif" required>
-        <span class="hint">JPG, PNG, WebP or GIF, up to 8 MB. Best size: 1200 × 400 pixels or larger, 3 times wider than tall. Your banner is shown as-is, so include your name and website on it.</span>
+      <label class="field"><span>Upload image <span class="optional">(optional)</span></span>
+        <input type="file" name="attachment" id="ad-image" accept="image/*,.heic,.heif">
+        <span class="hint">Have a banner or logo already? Add it here (any image, up to 8 MB). No image yet? No problem, we can work on it together.</span>
       </label>
       <label class="field">What do you want to advertise?
         <textarea name="description" id="ad-desc" required maxlength="1000" placeholder="A quick description"></textarea>
@@ -75,7 +78,7 @@
 
   <div data-ned-ads></div>
 </div>
-<script src="advertise.js?v=2"></script>
+<script src="advertise.js?v=3"></script>
 <script async src="widget.js"></script>
 </body>
 </html>

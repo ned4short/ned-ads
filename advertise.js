@@ -19,7 +19,8 @@
 
   var ERRORS = {
     size: 'That image is too big to send. Please choose one under 8 MB.',
-    image: 'We couldn\'t read that image. Please upload a JPG, PNG, WebP or GIF.',
+    image: 'We couldn\'t read that file. Please choose an image, or leave it blank.',
+    phone: 'Please check your phone number, or leave it blank.',
     fields: 'Please fill in every field with a valid email and website link.',
     busy: 'Too many requests from this connection. Please try again in an hour.',
     send: 'Sorry, your request didn\'t send. Please try again in a few minutes.'
@@ -37,9 +38,9 @@
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('ad-email').value.trim())) bad = ['Please enter a valid email address.', $('ad-email')];
     else if (!$('ad-business').value.trim()) bad = ['Please enter your business name.', $('ad-business')];
     else { try { new URL(site.value.trim()); } catch (e) { bad = ['Please enter your website link.', site]; } }
-    if (!bad && !file) bad = ['Please choose an image to upload.', $('ad-image')];
-    if (!bad && !/^image\//.test(file.type)) bad = ['Please upload an image file (JPG, PNG, WebP or GIF).', $('ad-image')];
-    if (!bad && file.size > 8 * 1024 * 1024) bad = ['That image is over 8 MB. Please choose a smaller one.', $('ad-image')];
+    if (!bad && $('ad-phone').value.trim() && $('ad-phone').value.replace(/\D/g, '').length < 7) bad = ['Please check your phone number, or leave it blank.', $('ad-phone')];
+    if (!bad && file && !/^image\//.test(file.type) && !/\.(heic|heif)$/i.test(file.name)) bad = ['That file isn\'t an image. Please choose an image, or leave it blank.', $('ad-image')];
+    if (!bad && file && file.size > 8 * 1024 * 1024) bad = ['That image is over 8 MB. Please choose a smaller one, or leave it blank.', $('ad-image')];
     if (!bad && !$('ad-desc').value.trim()) bad = ['Please add a quick description.', $('ad-desc')];
 
     if (bad) { ev.preventDefault(); fail(bad[0], bad[1]); return; }
