@@ -17,6 +17,7 @@
   var TRACK_URL = 'https://nedtraffic.replit.app/api/track';
   var TRACK_SITE = '56feae0c-8998-42ad-844d-ee2ba1a6a26c'; // Ned Traffic site ID for "Ned Ads"
   var ADVERTISE_URL = 'https://ads.nedwebservices.com/advertise.html';
+  var SHOW_ADVERTISE_BUTTON = false; // hidden for now; set to true to bring the "Advertise with us" button back
 
   var script = document.currentScript;
   var BASE = script ? new URL('.', script.src).href : 'https://ads.nedwebservices.com/';
@@ -194,11 +195,13 @@
       carousel.appendChild(controls);
     }
 
-    var cta = el('a', 'cta', 'Advertise with us');
-    cta.href = ADVERTISE_URL;
-    cta.target = '_blank';
-    cta.rel = 'noopener';
-    section.appendChild(cta);
+    if (SHOW_ADVERTISE_BUTTON) {
+      var cta = el('a', 'cta', 'Advertise with us');
+      cta.href = ADVERTISE_URL;
+      cta.target = '_blank';
+      cta.rel = 'noopener';
+      section.appendChild(cta);
+    }
     wrap.appendChild(section);
     root.appendChild(wrap);
 
