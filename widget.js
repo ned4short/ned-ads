@@ -7,7 +7,11 @@
  *   <script async src="https://ads.nedwebservices.com/widget.js"></script>
  *
  * Ads come from ads.json next to this file, so one change updates every site.
- * Each click is recorded in Ned Traffic as a visit to /click/<ad-name>.
+ * Each click is recorded in Ned Traffic ("Ned Ads" site) as a visit to /click/<ad-name>.
+ * Impressions go to a separate Ned Traffic site ("Ned Ads Impressions"):
+ *   /view?from=<site>                  the slideshow was seen (once per page load)
+ *   /impression/<ad-name>?from=<site>  that ad was seen (once per ad per page load)
+ * "Seen" means at least half the slideshow on screen, tab in front, for 1 second.
  */
 (function () {
   'use strict';
@@ -15,7 +19,10 @@
   var SECONDS = 5;                 // time each ad stays up
   var WIDE_ENOUGH = 2.4;           // width ÷ height at or above this = banner-shaped, shown as-is
   var TRACK_URL = 'https://nedtraffic.replit.app/api/track';
-  var TRACK_SITE = '56feae0c-8998-42ad-844d-ee2ba1a6a26c'; // Ned Traffic site ID for "Ned Ads"
+  var TRACK_SITE = '56feae0c-8998-42ad-844d-ee2ba1a6a26c'; // Ned Traffic site ID for "Ned Ads" (clicks)
+  var IMPRESSION_SITE = 'ac3f7c21-7fa7-4d91-839a-9828629acc3d'; // Ned Traffic site ID for "Ned Ads Impressions"
+  var SEEN_SHARE = 0.5;            // how much of the slideshow must be on screen to count as seen
+  var SEEN_MS = 1000;              // ...and for how long
   var ADVERTISE_URL = 'https://ads.nedwebservices.com/advertise.html';
   var SHOW_ADVERTISE_BUTTON = false; // hidden for now; set to true to bring the "Advertise with us" button back
 
@@ -74,13 +81,13 @@
     } catch (e) { return Math.random().toString(36).slice(2); }
   }
 
-  // Record a click in Ned Traffic as a visit to /click/<ad>; the site it came from is the referrer.
-  function trackClick(ad) {
-    if (!/^[0-9a-f-]{20,}$/i.test(TRACK_SITE)) return;
+  // Send one event to Ned Traffic as a visit to `path`; the site it came from is the referrer.
+  function send(siteId, path) {
+    if (!/^[0-9a-f-]{20,}$/i.test(siteId)) return;
     var payload = JSON.stringify({
-      siteId: TRACK_SITE,
+      siteId: siteId,
       type: 'pageview',
-      page: '/click/' + slug(ad.name) + '?from=' + encodeURIComponent(location.hostname),
+      page: path + '?from=' + encodeURIComponent(location.hostname),
       referrer: location.href,
       userAgent: navigator.userAgent,
       sessionId: sessionId()
@@ -89,6 +96,16 @@
       if (navigator.sendBeacon && navigator.sendBeacon(TRACK_URL, new Blob([payload], { type: 'application/json' }))) return;
       fetch(TRACK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true });
     } catch (e) {}
+  }
+
+  function trackClick(ad) { send(TRACK_SITE, '/click/' + slug(ad.name)); }
+
+  // Each thing counts at most once per page load, even with several slideshows on the page.
+  var counted = {};
+  function trackOnce(path) {
+    if (counted[path]) return;
+    counted[path] = true;
+    send(IMPRESSION_SITE, path);
   }
 
   function loadFont() {
@@ -205,6 +222,26 @@
     wrap.appendChild(section);
     root.appendChild(wrap);
 
+    // Impressions: count only when the slideshow is really on screen.
+    var inView = !('IntersectionObserver' in window), seenTimer = null;
+    function checkSeen() {
+      clearTimeout(seenTimer);
+      if (!inView || document.hidden) return;
+      var ad = ads[current];
+      seenTimer = setTimeout(function () {
+        if (!inView || document.hidden || ads[current] !== ad) return;
+        trackOnce('/view');
+        trackOnce('/impression/' + slug(ad.name));
+      }, SEEN_MS);
+    }
+    if (!inView) {
+      new IntersectionObserver(function (entries) {
+        inView = entries[entries.length - 1].intersectionRatio >= SEEN_SHARE;
+        checkSeen();
+      }, { threshold: [0, SEEN_SHARE, 1] }).observe(viewport);
+    }
+    document.addEventListener('visibilitychange', checkSeen);
+
     function go(i) {
       current = (i + ads.length) % ads.length;
       track.style.transform = 'translateX(' + (-100 * current) + '%)';
@@ -213,6 +250,7 @@
         s.setAttribute('aria-hidden', String(k !== current));
       });
       dots.forEach(function (d, k) { d.setAttribute('aria-current', String(k === current)); });
+      checkSeen();
     }
     function update() {
       pause.textContent = paused ? 'Play' : 'Pause';
