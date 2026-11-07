@@ -19,6 +19,7 @@ It carries its own styling, so it can't clash with the site's own design. Its ba
 
 - `ads.json` – the list of ads, in slideshow order. **New ads always go at the top of the list.** Each entry has a `name`, an `image` (file in `ads/`) and a `link` (opens in a new tab).
 - Banner-shaped images (about 3 times wider than tall, e.g. 1200 × 400) are shown as-is.
+- **Images are optimized automatically.** Upload any JPG, PNG, GIF or WebP to `ads/` and point `ads.json` at it. Within a minute the "Optimize ad images" GitHub Action converts it to a 1200 × 400 WebP under 100 KB (banner shapes are resized and lightly center-cropped; other shapes are shrunk to fit without cropping), deletes the original, and updates `ads.json`. To run it by hand: `pip install Pillow && python3 tools/optimize_ads.py`.
 - Any other shape is shown whole beside a red, blue or yellow panel with the name and a "Visit …" link. `"color": "red" | "blue" | "yellow"` picks the panel color.
 - Optional: `"sites": ["boredbandit.nedwebservices.com"]` shows an ad only on those sites; `"hideOn": [...]` hides it on those sites.
 
