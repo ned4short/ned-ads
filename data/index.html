@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ned Ads – Data</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#D62839">
+<link rel="icon" href="../favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../style.css?v=3">
+<style>
+  h1 { font-size: clamp(32px, 6vw, 48px); letter-spacing: -0.03em; margin: 8px 0 6px; }
+  .intro { color: var(--muted); font-size: 17px; margin: 0 0 22px; }
+  .ranges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .chip[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 30px; }
+  .tile { border: 2px solid var(--ink); border-radius: 16px; padding: 16px 18px; background: #fff; box-shadow: 5px 5px 0 var(--yellow); }
+  .tile .label { font-size: 14px; font-weight: 600; color: var(--muted); }
+  .tile .num { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  h2 { font-size: 22px; margin: 28px 0 10px; }
+  .table-wrap { overflow-x: auto; border: 2px solid var(--line); border-radius: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { padding: 11px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  th { background: #F1F3F8; font-weight: 700; cursor: pointer; user-select: none; }
+  th[aria-sort="ascending"]::after { content: " ▲"; font-size: 11px; }
+  th[aria-sort="descending"]::after { content: " ▼"; font-size: 11px; }
+  tbody tr:last-child td { border-bottom: none; }
+  .filter { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 10px; font-weight: 600; }
+  .filter select { height: 40px; border: 2px solid var(--field); border-radius: 10px; padding: 0 10px; font: inherit; font-weight: 500; background: #fff; }
+  .status { padding: 18px; border: 2px dashed var(--field); border-radius: 14px; color: var(--muted); }
+  .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin: 26px 0 40px; color: var(--muted); font-size: 14px; }
+  .csv { height: 40px; padding: 0 16px; border: 2px solid var(--blue); border-radius: 10px; background: #fff; color: var(--blue); font: inherit; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="site-header wrap">
+    <a href="https://ads.nedwebservices.com/" class="logo">
+      <img src="../ned-logo.png" width="44" height="44" alt="" style="display:block;border-radius:10px">
+      <span>Ned Ads</span>
+    </a>
+  </header>
+
+  <main class="wrap">
+    <h1>Ned Ads data<span class="red">.</span></h1>
+    <p class="intro">Slideshow views, ad impressions and clicks across every website showing Ned Ads.</p>
+
+    <div class="ranges" role="group" aria-label="Date range">
+      <button class="chip" type="button" data-days="1">Today</button>
+      <button class="chip" type="button" data-days="7">7 days</button>
+      <button class="chip" type="button" data-days="30" aria-pressed="true">30 days</button>
+      <button class="chip" type="button" data-days="0">All time</button>
+    </div>
+
+    <div id="status" class="status">Loading…</div>
+
+    <div id="report" hidden>
+      <div class="tiles">
+        <div class="tile"><div class="label">Slideshow views</div><div class="num" id="t-views">0</div></div>
+        <div class="tile"><div class="label">Ad impressions</div><div class="num" id="t-imp">0</div></div>
+        <div class="tile"><div class="label">Clicks</div><div class="num" id="t-clicks">0</div></div>
+        <div class="tile"><div class="label">Click-through rate</div><div class="num" id="t-ctr">—</div></div>
+      </div>
+
+      <h2>By ad</h2>
+      <div class="table-wrap"><table id="by-ad"></table></div>
+
+      <h2>By website</h2>
+      <div class="table-wrap"><table id="by-site"></table></div>
+
+      <h2>Ad × website</h2>
+      <div class="filter">
+        <label>Ad <select id="f-ad"><option value="">All</option></select></label>
+        <label>Website <select id="f-site"><option value="">All</option></select></label>
+      </div>
+      <div class="table-wrap"><table id="by-both"></table></div>
+
+      <div class="foot">
+        <span id="updated"></span>
+        <button class="csv" type="button" id="csv">Download CSV</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  // Public, read-only report from Ned Traffic. Expected JSON:
+  // { generatedAt, views: [{site, views}], rows: [{ad, site, impressions, clicks}] }
+  var REPORT_URL = 'https://nedtraffic.replit.app/api/public/ned-ads-report';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (n) { return Number(n || 0).toLocaleString(); };
+  var ctr = function (c, i) { return i > 0 ? (100 * c / i).toFixed(1) + '%' : '—'; };
+  var ctrNum = function (c, i) { return i > 0 ? c / i : -1; };
+  var data = null, both = [];
+
+  function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+  function load(days) {
+    $('status').hidden = false; $('status').textContent = 'Loading…'; $('report').hidden = true;
+    var url = REPORT_URL;
+    if (days > 0) {
+      var from = new Date(); from.setHours(0, 0, 0, 0); from.setDate(from.getDate() - (days - 1));
+      url += '?from=' + ymd(from) + '&to=' + ymd(new Date()) + '&tz=' + encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+    }
+    fetch(url, { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) { data = d; render(); })
+      .catch(function () {
+        $('status').textContent = 'Couldn’t load the numbers from Ned Traffic right now. Try again in a bit.';
+      });
+  }
+
+  function group(rows, key) {
+    var m = {};
+    rows.forEach(function (r) {
+      var k = r[key] || '(unknown)';
+      var g = m[k] || (m[k] = { name: k, views: 0, impressions: 0, clicks: 0 });
+      g.impressions += +r.impressions || 0; g.clicks += +r.clicks || 0;
+    });
+    return m;
+  }
+
+  function table(el, cols, rows, sortKey, dir) {
+    el.__state = el.__state || { key: sortKey, dir: dir || -1 };
+    var st = el.__state;
+    rows = rows.slice().sort(function (a, b) {
+      var x = a[st.key], y = b[st.key];
+      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * st.dir;
+    });
+    var h = '<thead><tr>' + cols.map(function (c) {
+      var s = c.key === st.key ? (st.dir > 0 ? 'ascending' : 'descending') : 'none';
+      return '<th scope="col" data-key="' + c.key + '" aria-sort="' + s + '" tabindex="0">' + c.label + '</th>';
+    }).join('') + '</tr></thead><tbody>';
+    if (!rows.length) h += '<tr><td colspan="' + cols.length + '">No data yet for this range.</td></tr>';
+    rows.forEach(function (r) {
+      h += '<tr>' + cols.map(function (c) {
+        var v = c.show ? c.show(r) : (typeof r[c.key] === 'number' ? fmt(r[c.key]) : r[c.key]);
+        return '<td>' + String(v).replace(/[&<>"]/g, function (ch) { return '&#' + ch.charCodeAt(0) + ';'; }) + '</td>';
+      }).join('') + '</tr>';
+    });
+    el.innerHTML = h + '</tbody>';
+    Array.prototype.forEach.call(el.querySelectorAll('th'), function (th) {
+      function sort() {
+        var k = th.getAttribute('data-key');
+        st.dir = st.key === k ? -st.dir : (k === 'name' || k === 'site' || k === 'ad' ? 1 : -1);
+        st.key = k; table(el, cols, rows, st.key, st.dir);
+      }
+      th.addEventListener('click', sort);
+      th.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sort(); } });
+    });
+  }
+
+  function withCtr(list) { return list.map(function (g) { g.ctr = ctrNum(g.clicks, g.impressions); return g; }); }
+  var CTR = { key: 'ctr', label: 'CTR', show: function (r) { return ctr(r.clicks, r.impressions); } };
+
+  function render() {
+    var rows = (data && data.rows) || [], views = (data && data.views) || [];
+    var tv = 0, ti = 0, tc = 0;
+    views.forEach(function (v) { tv += +v.views || 0; });
+    rows.forEach(function (r) { ti += +r.impressions || 0; tc += +r.clicks || 0; });
+    $('t-views').textContent = fmt(tv); $('t-imp').textContent = fmt(ti);
+    $('t-clicks').textContent = fmt(tc); $('t-ctr').textContent = ctr(tc, ti);
+
+    var ads = group(rows, 'ad'), sites = group(rows, 'site');
+    views.forEach(function (v) {
+      var k = v.site || '(unknown)';
+      (sites[k] || (sites[k] = { name: k, views: 0, impressions: 0, clicks: 0 })).views += +v.views || 0;
+    });
+
+    table($('by-ad'), [{ key: 'name', label: 'Ad' }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR],
+      withCtr(Object.keys(ads).map(function (k) { return ads[k]; })), 'impressions');
+    table($('by-site'), [{ key: 'name', label: 'Website' }, { key: 'views', label: 'Slideshow views' }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR],
+      withCtr(Object.keys(sites).map(function (k) { return sites[k]; })), 'views');
+
+    both = withCtr(rows.map(function (r) {
+      return { ad: r.ad || '(unknown)', site: r.site || '(unknown)', impressions: +r.impressions || 0, clicks: +r.clicks || 0 };
+    }));
+    fill($('f-ad'), Object.keys(ads)); fill($('f-site'), Object.keys(sites));
+    renderBoth();
+
+    $('updated').textContent = 'Updated ' + new Date(data && data.generatedAt || Date.now()).toLocaleString();
+    $('status').hidden = true; $('report').hidden = false;
+  }
+
+  function fill(sel, names) {
+    var keep = sel.value;
+    sel.innerHTML = '<option value="">All</option>' + names.sort().map(function (n) {
+      return '<option>' + n.replace(/[&<>"]/g, function (ch) { return '&#' + ch.charCodeAt(0) + ';'; }) + '</option>';
+    }).join('');
+    sel.value = names.indexOf(keep) !== -1 ? keep : '';
+  }
+
+  function filtered() {
+    var a = $('f-ad').value, s = $('f-site').value;
+    return both.filter(function (r) { return (!a || r.ad === a) && (!s || r.site === s); });
+  }
+  function renderBoth() {
+    table($('by-both'), [{ key: 'ad', label: 'Ad' }, { key: 'site', label: 'Website' }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR],
+      filtered(), 'impressions');
+  }
+  $('f-ad').addEventListener('change', renderBoth);
+  $('f-site').addEventListener('change', renderBoth);
+
+  $('csv').addEventListener('click', function () {
+    var lines = [['Ad', 'Website', 'Impressions', 'Clicks', 'CTR']].concat(filtered().map(function (r) {
+      return [r.ad, r.site, r.impressions, r.clicks, ctr(r.clicks, r.impressions)];
+    }));
+    var csv = lines.map(function (l) { return l.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'ned-ads-data.csv'; document.body.appendChild(a); a.click(); a.remove();
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.ranges .chip'), function (b, _, all) {
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(all, function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      load(+b.getAttribute('data-days'));
+    });
+  });
+  load(30);
+})();
+</script>
+</body>
+</html>
