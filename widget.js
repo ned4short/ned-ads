@@ -26,8 +26,10 @@
   var ADVERTISE_URL = 'https://ads.nedwebservices.com/advertise.html';
   var SHOW_ADVERTISE_BUTTON = false; // hidden for now; set to true to bring the "Advertise with us" button back
 
+  // Ads and images always come from ads.nedwebservices.com, even if a site saves its own copy of this file.
+  var HOME = 'https://ads.nedwebservices.com/';
   var script = document.currentScript;
-  var BASE = script ? new URL('.', script.src).href : 'https://ads.nedwebservices.com/';
+  var BASE = script && /^https?:\/\/(ads\.nedwebservices\.com|localhost|127\.0\.0\.1)(:\d+)?\//.test(script.src) ? new URL('.', script.src).href : HOME;
   var COLORS = {
     red: { bg: '#D62839', fg: '#FFFFFF' },
     blue: { bg: '#1F4FBF', fg: '#FFFFFF' },
@@ -160,7 +162,7 @@
         if (!whole || a.showName === false || !a.name) return;
         var panel = el('span', 'panel');
         panel.appendChild(el('span', 'name', a.name));
-        panel.appendChild(el('span', 'visit', 'Visit ' + site + ' →'));
+        panel.appendChild(el('span', 'visit', 'Visit ' + site + ' \u2192'));
         link.appendChild(panel);
       }
       if (a.fit === 'whole') layout(true);
@@ -169,6 +171,19 @@
         layout(false);
         img.addEventListener('load', function () { layout(img.naturalWidth / img.naturalHeight < WIDE_ENOUGH); });
       }
+      // If the image can't load, try once more; if it still fails, show the ad as text instead of a broken picture.
+      var retried = false;
+      img.addEventListener('error', function () {
+        if (!retried) { retried = true; img.src = new URL(a.image, BASE).href + (a.image.indexOf('?') === -1 ? '?' : '&') + 'retry=1'; return; }
+        img.style.display = 'none';
+        link.className = 'slide whole';
+        if (!link.querySelector('.panel')) {
+          var panel = el('span', 'panel');
+          panel.appendChild(el('span', 'name', a.name || 'Visit our sponsor'));
+          panel.appendChild(el('span', 'visit', 'Visit ' + site + ' \u2192'));
+          link.appendChild(panel);
+        }
+      });
       img.src = new URL(a.image, BASE).href;
       link.addEventListener('click', function () { trackClick(a); });
       link.addEventListener('auxclick', function (e) { if (e.button === 1) trackClick(a); });
