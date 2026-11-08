@@ -21,6 +21,12 @@
   .tile { border: 2px solid var(--ink); border-radius: 16px; padding: 16px 18px; background: #fff; box-shadow: 5px 5px 0 var(--yellow); }
   .tile .label { font-size: 14px; font-weight: 600; color: var(--muted); }
   .tile .num { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .tiles.more { grid-template-columns: repeat(2, 1fr); margin-top: -14px; }
+  @media (min-width: 720px) { .tiles.more { grid-template-columns: repeat(3, 1fr); } }
+  .tile .what.site { font-size: 16px; }
+  .tiles.more .tile { box-shadow: 5px 5px 0 #C9D6F5; }
+  .tile .what { font-size: 19px; font-weight: 800; margin-top: 6px; line-height: 1.2; overflow-wrap: anywhere; }
+  .tile .sub { font-size: 14px; color: var(--muted); margin-top: 3px; }
   h2 { font-size: 22px; margin: 28px 0 10px; }
   .table-wrap { overflow-x: auto; border: 2px solid var(--line); border-radius: 14px; }
   table { width: 100%; border-collapse: collapse; font-size: 15px; }
@@ -66,6 +72,14 @@
         <div class="tile"><div class="label">Clicks</div><div class="num" id="t-clicks">0</div></div>
         <div class="tile"><div class="label">Click-through rate</div><div class="num" id="t-ctr">—</div></div>
       </div>
+      <div class="tiles more">
+        <div class="tile"><div class="label">Websites showing ads</div><div class="num" id="t-sites">0</div></div>
+        <div class="tile"><div class="label">Active ads</div><div class="num" id="t-ads">0</div></div>
+        <div class="tile"><div class="label">Ads seen per view</div><div class="num" id="t-per">—</div></div>
+        <div class="tile"><div class="label">Top ad · most seen</div><div class="what" id="t-seen">—</div><div class="sub" id="t-seen-n"></div></div>
+        <div class="tile"><div class="label">Top ad · most clicked</div><div class="what" id="t-clicked">—</div><div class="sub" id="t-clicked-n"></div></div>
+        <div class="tile"><div class="label">Top website</div><div class="what site" id="t-site">—</div><div class="sub" id="t-site-n"></div></div>
+      </div>
 
       <h2>By ad</h2>
       <div class="table-wrap"><table id="by-ad"></table></div>
@@ -99,6 +113,21 @@
   var fmt = function (n) { return Number(n || 0).toLocaleString(); };
   var ctr = function (c, i) { return i > 0 ? (100 * c / i).toFixed(1) + '%' : '—'; };
   var ctrNum = function (c, i) { return i > 0 ? c / i : -1; };
+  // Real ad names from the ad list, so "upstage-comedy-lounge" shows as "Upstage Comedy Lounge".
+  var NAMES = {};
+  var slug = function (s) { return String(s || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
+  var label = function (k) { return NAMES[k] || k.replace(/-/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }); };
+  fetch('../ads.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (list) {
+    list.forEach(function (a) { NAMES[slug(a.name)] = a.name; });
+    if (data) render();
+  }).catch(function () {});
+  var plural = function (n, w) { return fmt(n) + ' ' + w + (n === 1 ? '' : 's'); };
+  function top(list, key) {
+    var best = null;
+    list.forEach(function (g) { if (g[key] > 0 && (!best || g[key] > best[key])) best = g; });
+    return best;
+  }
+
   var data = null, both = [], days = 30, REFRESH_MS = 60000, seq = 0;
 
   function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -178,7 +207,21 @@
       (sites[k] || (sites[k] = { name: k, views: 0, impressions: 0, clicks: 0 })).views += +v.views || 0;
     });
 
-    table($('by-ad'), [{ key: 'name', label: 'Ad' }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR],
+    // Extra tiles. Test clicks (names starting with "test") are left out of the "top" picks.
+    var adList = Object.keys(ads).map(function (k) { return ads[k]; }).filter(function (g) { return !/^test/.test(g.name); });
+    var siteList = Object.keys(sites).map(function (k) { return sites[k]; });
+    $('t-sites').textContent = fmt(siteList.filter(function (g) { return g.views > 0 || g.impressions > 0; }).length);
+    $('t-ads').textContent = fmt(adList.filter(function (g) { return g.impressions > 0; }).length);
+    $('t-per').textContent = tv > 0 ? (ti / tv).toFixed(1) : '—';
+    var seen = top(adList, 'impressions'), clicked = top(adList, 'clicks'), site = top(siteList, 'views');
+    $('t-seen').textContent = seen ? label(seen.name) : '—';
+    $('t-seen-n').textContent = seen ? plural(seen.impressions, 'impression') : '';
+    $('t-clicked').textContent = clicked ? label(clicked.name) : '—';
+    $('t-clicked-n').textContent = clicked ? plural(clicked.clicks, 'click') : '';
+    $('t-site').textContent = site ? site.name : '—';
+    $('t-site-n').textContent = site ? plural(site.views, 'slideshow view') : '';
+
+    table($('by-ad'), [{ key: 'name', label: 'Ad', show: function (r) { return label(r.name); } }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR],
       withCtr(Object.keys(ads).map(function (k) { return ads[k]; })), 'impressions');
     table($('by-site'), [{ key: 'name', label: 'Website' }, { key: 'views', label: 'Slideshow views' }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR],
       withCtr(Object.keys(sites).map(function (k) { return sites[k]; })), 'views');
@@ -206,7 +249,7 @@
     return both.filter(function (r) { return (!a || r.ad === a) && (!s || r.site === s); });
   }
   function renderBoth() {
-    table($('by-both'), [{ key: 'ad', label: 'Ad' }, { key: 'site', label: 'Website' }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR],
+    table($('by-both'), [{ key: 'ad', label: 'Ad', show: function (r) { return label(r.ad); } }, { key: 'site', label: 'Website' }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR],
       filtered(), 'impressions');
   }
   $('f-ad').addEventListener('change', renderBoth);
