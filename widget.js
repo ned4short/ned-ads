@@ -153,6 +153,7 @@
       link.style.setProperty('--fg', color.fg);
       var img = el('img');
       img.alt = a.name || 'Advertiser';
+      img.loading = 'lazy';
       link.appendChild(img);
       var site = a.link.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '');
       function layout(whole) {
@@ -253,6 +254,7 @@
       new IntersectionObserver(function (entries) {
         inView = entries[entries.length - 1].intersectionRatio >= SEEN_SHARE;
         checkSeen();
+        restart(); // only rotate while on screen
       }, { threshold: [0, SEEN_SHARE, 1] }).observe(viewport);
     }
     document.addEventListener('visibilitychange', checkSeen);
@@ -273,7 +275,7 @@
     }
     function restart() {
       clearInterval(timer);
-      if (ads.length > 1 && !paused && !hover) timer = setInterval(function () { go(current + 1); }, SECONDS * 1000);
+      if (ads.length > 1 && !paused && !hover && inView) timer = setInterval(function () { go(current + 1); }, SECONDS * 1000);
     }
     viewport.addEventListener('mouseenter', function () { hover = true; restart(); });
     viewport.addEventListener('mouseleave', function () { hover = false; restart(); });
@@ -287,7 +289,27 @@
       if (Math.abs(dx) > 40) { go(current + (dx < 0 ? 1 : -1)); restart(); }
       startX = null;
     });
-    go(0); update(); restart();
+    // data-start="N" begins on the Nth ad, so several slideshows on one page show different ads.
+    var startAt = parseInt(host.getAttribute('data-start') || '0', 10) || 0;
+    go(startAt); update(); restart();
+  }
+
+  var listPromise = null;
+  function loadAds() {
+    if (!listPromise) {
+      listPromise = fetch(BASE + 'ads.json', { cache: 'no-cache' })
+        .then(function (r) { return r.json(); })
+        .then(function (list) {
+          var here = location.hostname.replace(/^www\./, '');
+          return (list || []).filter(function (a) {
+            if (!a || !a.image || !/^https?:\/\//i.test(a.link || '')) return false;
+            if (a.sites && a.sites.length && a.sites.indexOf(here) === -1) return false;
+            if (a.hideOn && a.hideOn.indexOf(here) !== -1) return false;
+            return true;
+          });
+        });
+    }
+    return listPromise;
   }
 
   function start() {
@@ -295,22 +317,24 @@
     if (!hosts.length) return;
     hosts.forEach(function (h) { h.__nedAds = true; });
     loadFont();
-    fetch(BASE + 'ads.json', { cache: 'no-cache' })
-      .then(function (r) { return r.json(); })
-      .then(function (list) {
-        var here = location.hostname.replace(/^www\./, '');
-        var ads = (list || []).filter(function (a) {
-          if (!a || !a.image || !/^https?:\/\//i.test(a.link || '')) return false;
-          if (a.sites && a.sites.length && a.sites.indexOf(here) === -1) return false;
-          if (a.hideOn && a.hideOn.indexOf(here) !== -1) return false;
-          return true;
-        });
-        if (!ads.length) return;
-        hosts.forEach(function (h) { mount(h, ads); });
-      })
-      .catch(function () {});
+    loadAds().then(function (ads) {
+      if (!ads.length) return;
+      hosts.forEach(function (h) { if (h.isConnected) mount(h, ads); });
+    }).catch(function () { listPromise = null; });
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
-  else start();
+  // Slideshows added to the page later (e.g. between event results) start up automatically.
+  var pending = false;
+  function watch() {
+    if (!('MutationObserver' in window)) return;
+    new MutationObserver(function () {
+      if (pending) return;
+      pending = true;
+      (window.requestAnimationFrame || setTimeout)(function () { pending = false; start(); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  function boot() { start(); watch(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();
