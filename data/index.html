@@ -21,6 +21,9 @@
   .tile { border: 2px solid var(--ink); border-radius: 16px; padding: 16px 18px; background: #fff; box-shadow: 5px 5px 0 var(--yellow); }
   .tile .label { font-size: 14px; font-weight: 600; color: var(--muted); }
   .tile .num { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.tiles.top { grid-template-columns: repeat(2, 1fr); }
+  .tiles.top .wide { grid-column: 1 / -1; }
+  @media (min-width: 720px) { .tiles.top { grid-template-columns: repeat(5, 1fr); } .tiles.top .wide { grid-column: auto; } }
   .tiles.more { grid-template-columns: repeat(2, 1fr); margin-top: -14px; }
   @media (min-width: 720px) { .tiles.more { grid-template-columns: repeat(3, 1fr); } }
   .tile .what.site { font-size: 16px; }
@@ -66,7 +69,8 @@
     <div id="status" class="status">Loading…</div>
 
     <div id="report" hidden>
-      <div class="tiles">
+      <div class="tiles top">
+        <div class="tile wide"><div class="label">Unique visitors</div><div class="num" id="t-visitors">—</div></div>
         <div class="tile"><div class="label">Slideshow views</div><div class="num" id="t-views">0</div></div>
         <div class="tile"><div class="label">Ad impressions</div><div class="num" id="t-imp">0</div></div>
         <div class="tile"><div class="label">Clicks</div><div class="num" id="t-clicks">0</div></div>
@@ -106,7 +110,8 @@
 (function () {
   'use strict';
   // Public, read-only report from Ned Traffic. Expected JSON:
-  // { generatedAt, views: [{site, views}], rows: [{ad, site, impressions, clicks}] }
+  // { generatedAt, uniqueVisitors, views: [{site, views}], rows: [{ad, site, impressions, clicks}],
+  //   sites: [{site, visitors, lastSeen}] }   (uniqueVisitors and sites are optional)
   var REPORT_URL = 'https://nedtraffic.replit.app/api/public/ned-ads-report';
 
   var $ = function (id) { return document.getElementById(id); };
@@ -122,6 +127,15 @@
     if (data) render();
   }).catch(function () {});
   var plural = function (n, w) { return fmt(n) + ' ' + w + (n === 1 ? '' : 's'); };
+  function ago(ms) {
+    if (!ms) return '—';
+    var s = Math.max(0, (Date.now() - ms) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s / 60) + ' min ago';
+    if (s < 86400) return Math.floor(s / 3600) + ' hr ago';
+    var d = Math.floor(s / 86400);
+    return d === 1 ? 'yesterday' : d < 30 ? d + ' days ago' : new Date(ms).toLocaleDateString();
+  }
   function top(list, key) {
     var best = null;
     list.forEach(function (g) { if (g[key] > 0 && (!best || g[key] > best[key])) best = g; });
@@ -202,10 +216,16 @@
     $('t-clicks').textContent = fmt(tc); $('t-ctr').textContent = ctr(tc, ti);
 
     var ads = group(rows, 'ad'), sites = group(rows, 'site');
-    views.forEach(function (v) {
-      var k = v.site || '(unknown)';
-      (sites[k] || (sites[k] = { name: k, views: 0, impressions: 0, clicks: 0 })).views += +v.views || 0;
+    var site = function (k) { k = k || '(unknown)'; return sites[k] || (sites[k] = { name: k, views: 0, impressions: 0, clicks: 0, visitors: -1, lastSeen: 0 }); };
+    views.forEach(function (v) { site(v.site).views += +v.views || 0; });
+    Object.keys(sites).forEach(function (k) { sites[k].visitors = -1; sites[k].lastSeen = 0; });
+    ((data && data.sites) || []).forEach(function (x) {
+      var g = site(x.site);
+      g.visitors = x.visitors == null ? -1 : +x.visitors;
+      g.lastSeen = x.lastSeen ? Date.parse(x.lastSeen) || 0 : 0;
     });
+    var uv = data && data.uniqueVisitors;
+    $('t-visitors').textContent = uv == null ? '—' : fmt(uv);
 
     // Extra tiles. Test clicks (names starting with "test") are left out of the "top" picks.
     var adList = Object.keys(ads).map(function (k) { return ads[k]; }).filter(function (g) { return !/^test/.test(g.name); });
@@ -223,7 +243,10 @@
 
     table($('by-ad'), [{ key: 'name', label: 'Ad', show: function (r) { return label(r.name); } }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR],
       withCtr(Object.keys(ads).map(function (k) { return ads[k]; })), 'impressions');
-    table($('by-site'), [{ key: 'name', label: 'Website' }, { key: 'views', label: 'Slideshow views' }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR],
+    table($('by-site'), [{ key: 'name', label: 'Website' },
+      { key: 'visitors', label: 'Visitors', show: function (r) { return r.visitors < 0 ? '—' : fmt(r.visitors); } },
+      { key: 'views', label: 'Slideshow views' }, { key: 'impressions', label: 'Impressions' }, { key: 'clicks', label: 'Clicks' }, CTR,
+      { key: 'lastSeen', label: 'Last seen', show: function (r) { return ago(r.lastSeen); } }],
       withCtr(Object.keys(sites).map(function (k) { return sites[k]; })), 'views');
 
     both = withCtr(rows.map(function (r) {
