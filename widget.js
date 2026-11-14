@@ -16,7 +16,7 @@
 (function () {
   'use strict';
 
-  var SECONDS = 5;                 // time each ad stays up
+  var SECONDS = 4;                 // time each ad stays up
   var WIDE_ENOUGH = 2.4;           // width ÷ height at or above this = banner-shaped, shown as-is
   var TRACK_URL = 'https://nedtraffic.replit.app/api/track';
   var TRACK_SITE = '56feae0c-8998-42ad-844d-ee2ba1a6a26c'; // Ned Traffic site ID for "Ned Ads" (clicks)
