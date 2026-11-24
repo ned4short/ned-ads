@@ -245,10 +245,11 @@
       g.lastSeen = x.lastSeen ? Date.parse(x.lastSeen) || 0 : 0;
     });
     var uv = data && data.uniqueVisitors, uvNote = '';
-    if (hideTest && siteInfo.length) {
-      // Ned Traffic only sends one overall unique count, so with test sites hidden this adds up each real site's visitors.
-      uv = 0; siteInfo.forEach(function (x) { uv += +x.visitors || 0; });
-      uvNote = 'Added up per site · someone on two sites counts twice';
+    if (hideTest && uv != null) {
+      // Ned Traffic only sends one overall unique count, so take out the visitors seen on test sites.
+      var testVisitors = 0;
+      ((data && data.sites) || []).forEach(function (x) { if (isTestSite(x.site)) testVisitors += +x.visitors || 0; });
+      if (testVisitors > 0) { uv = Math.max(0, uv - testVisitors); uvNote = 'About · test-site visitors taken out'; }
     }
     $('t-visitors').textContent = uv == null ? '—' : fmt(uv);
     $('t-visitors-n').textContent = uvNote;
