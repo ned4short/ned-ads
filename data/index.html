@@ -254,7 +254,7 @@
       // Ned Traffic only sends one overall unique count, so take out the visitors seen on test sites.
       var testVisitors = 0;
       ((data && data.sites) || []).forEach(function (x) { if (isTestSite(x.site)) testVisitors += +x.visitors || 0; });
-      if (testVisitors > 0) { uv = Math.max(0, uv - testVisitors); uvNote = 'About · test-site visitors taken out'; }
+      if (testVisitors > 0) { uv = Math.max(0, uv - testVisitors); }
     }
     $('t-visitors').textContent = uv == null ? '—' : fmt(uv);
     $('t-visitors-n').textContent = uvNote;
