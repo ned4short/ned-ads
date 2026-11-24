@@ -64,13 +64,14 @@
       <button class="chip" type="button" data-days="7">7 days</button>
       <button class="chip" type="button" data-days="30" aria-pressed="true">30 days</button>
       <button class="chip" type="button" data-days="0">All time</button>
+      <button class="chip" type="button" id="hide-test" aria-pressed="true" title="Hides sandbox and preview sites, ads.nedwebservices.com itself, and test ads">Real traffic only</button>
     </div>
 
     <div id="status" class="status">Loading…</div>
 
     <div id="report" hidden>
       <div class="tiles top">
-        <div class="tile wide"><div class="label">Unique visitors</div><div class="num" id="t-visitors">—</div></div>
+        <div class="tile wide"><div class="label">Unique visitors</div><div class="num" id="t-visitors">—</div><div class="sub" id="t-visitors-n"></div></div>
         <div class="tile"><div class="label">Slideshow views</div><div class="num" id="t-views">0</div></div>
         <div class="tile"><div class="label">Ad impressions</div><div class="num" id="t-imp">0</div></div>
         <div class="tile"><div class="label">Clicks</div><div class="num" id="t-clicks">0</div></div>
@@ -207,8 +208,27 @@
   function withCtr(list) { return list.map(function (g) { g.ctr = ctrNum(g.clicks, g.impressions); return g; }); }
   var CTR = { key: 'ctr', label: 'CTR', show: function (r) { return ctr(r.clicks, r.impressions); } };
 
+  // "Real traffic only": hide sandbox/preview sites, this site itself, and test ads.
+  var TEST_SITE = /(^|\.)sandbox\.|\.replit\.dev$|^ads\.nedwebservices\.com$|^localhost$|^127\.0\.0\.1$/i;
+  var isTestSite = function (s) { return TEST_SITE.test(String(s || '')); };
+  var isTestAd = function (a) { return /^test/i.test(String(a || '')); };
+  var hideTest = true;
+  try { hideTest = localStorage.getItem('nedAdsHideTest') !== '0'; } catch (e) {}
+  $('hide-test').setAttribute('aria-pressed', String(hideTest));
+  $('hide-test').addEventListener('click', function () {
+    hideTest = !hideTest;
+    this.setAttribute('aria-pressed', String(hideTest));
+    try { localStorage.setItem('nedAdsHideTest', hideTest ? '1' : '0'); } catch (e) {}
+    if (data) render();
+  });
+
   function render() {
-    var rows = (data && data.rows) || [], views = (data && data.views) || [];
+    var rows = (data && data.rows) || [], views = (data && data.views) || [], siteInfo = (data && data.sites) || [];
+    if (hideTest) {
+      rows = rows.filter(function (r) { return !isTestSite(r.site) && !isTestAd(r.ad); });
+      views = views.filter(function (v) { return !isTestSite(v.site); });
+      siteInfo = siteInfo.filter(function (x) { return !isTestSite(x.site); });
+    }
     var tv = 0, ti = 0, tc = 0;
     views.forEach(function (v) { tv += +v.views || 0; });
     rows.forEach(function (r) { ti += +r.impressions || 0; tc += +r.clicks || 0; });
@@ -219,13 +239,19 @@
     var site = function (k) { k = k || '(unknown)'; return sites[k] || (sites[k] = { name: k, views: 0, impressions: 0, clicks: 0, visitors: -1, lastSeen: 0 }); };
     views.forEach(function (v) { site(v.site).views += +v.views || 0; });
     Object.keys(sites).forEach(function (k) { sites[k].visitors = -1; sites[k].lastSeen = 0; });
-    ((data && data.sites) || []).forEach(function (x) {
+    siteInfo.forEach(function (x) {
       var g = site(x.site);
       g.visitors = x.visitors == null ? -1 : +x.visitors;
       g.lastSeen = x.lastSeen ? Date.parse(x.lastSeen) || 0 : 0;
     });
-    var uv = data && data.uniqueVisitors;
+    var uv = data && data.uniqueVisitors, uvNote = '';
+    if (hideTest && siteInfo.length) {
+      // Ned Traffic only sends one overall unique count, so with test sites hidden this adds up each real site's visitors.
+      uv = 0; siteInfo.forEach(function (x) { uv += +x.visitors || 0; });
+      uvNote = 'Added up per site · someone on two sites counts twice';
+    }
     $('t-visitors').textContent = uv == null ? '—' : fmt(uv);
+    $('t-visitors-n').textContent = uvNote;
 
     // Extra tiles. Test clicks (names starting with "test") are left out of the "top" picks.
     var adList = Object.keys(ads).map(function (k) { return ads[k]; }).filter(function (g) { return !/^test/.test(g.name); });
@@ -288,7 +314,7 @@
     a.download = 'ned-ads-data.csv'; document.body.appendChild(a); a.click(); a.remove();
   });
 
-  Array.prototype.forEach.call(document.querySelectorAll('.ranges .chip'), function (b, _, all) {
+  Array.prototype.forEach.call(document.querySelectorAll('.ranges .chip[data-days]'), function (b, _, all) {
     b.addEventListener('click', function () {
       Array.prototype.forEach.call(all, function (x) { x.setAttribute('aria-pressed', String(x === b)); });
       days = +b.getAttribute('data-days');
